@@ -1,0 +1,19 @@
+{
+    "name": "cmc/sdk",
+    "description": "Sdk for Chen Ming Ching",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jason Chen",
+            "email": "cmc569@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+    	"psr-4": {
+    		"CMC\\": "src/CMC"
+    	}
+    }
+}
