@@ -1,10 +1,10 @@
 <?php 
 require_once 'vendor/autoload.php';
  
-use \CMC\DB\Database;
-use \CMC\LineSDK\LineBotRequest;
-use \CMC\JWT\Jwt;
-use \CMC\Encryption\Aes;
+use CMC\DB\Database;
+use CMC\LineSDK\LineBotRequest;
+use CMC\JWT\Jwt;
+use CMC\Encryption\Aes;
 
 $key = 'accuhit';
 $str = 'abc123 中文';
