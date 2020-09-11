@@ -2,10 +2,7 @@
 //version 1.03
 namespace CMC\FacebookSDK;
 
-date_default_timezone_set("Asia/Taipei");
-
 class MessengerBotWebhook {
-
     private $log_path = __DIR__ . '/log';
     private $webhook_log;
     private $image_path;
@@ -214,13 +211,21 @@ class MessengerBotWebhook {
                     'reason'    => $v['policy_enforcement']['reason'],
                 );
                 $data['type'] = 'policy_enforcement';
+            } else if (isset($v['reaction'])) {            //互動反應
+                $data['reaction'] = array(
+                    'reaction'  => $v['reaction']['reaction'],
+                    'emoji'     => $v['reaction']['emoji'],
+                    'action'    => $v['reaction']['action'],
+                    'mid'       => $v['reaction']['mid'],
+                );
+                $data['type'] = 'reaction';
             } else if (isset($v['optin'])) {            //外掛或一次性訊息的token通知
                 $data['optin'] = array();
-                if (!empty($v['optin']['ref'])) $data['optin']['ref'];
-                if (!empty($v['optin']['user_ref'])) $data['optin']['user_ref'];
-                if (!empty($v['optin']['type'])) $data['optin']['type'];
-                if (!empty($v['optin']['payload'])) $data['optin']['payload'];
-                if (!empty($v['optin']['one_time_notif_token'])) $data['optin']['one_time_notif_token'];
+                if (!empty($v['optin']['ref'])) $data['optin']['ref'] = $v['optin']['ref'];
+                if (!empty($v['optin']['user_ref'])) $data['optin']['user_ref'] = $v['optin']['user_ref'];
+                if (!empty($v['optin']['type'])) $data['optin']['type'] = $v['optin']['type'];
+                if (!empty($v['optin']['payload'])) $data['optin']['payload'] = $v['optin']['payload'];
+                if (!empty($v['optin']['one_time_notif_token'])) $data['optin']['one_time_notif_token'] = $v['optin']['one_time_notif_token'];
                 $data['type'] = 'optin';
             } else if ($v['postback']['payload'] == 'GET_START') {      //start up
                 if (isset($v['postback']['referral']['ref'])) {
