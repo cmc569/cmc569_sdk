@@ -1,8 +1,11 @@
 <?php
-//version 1.02
+//version 1.03
 namespace CMC\FacebookSDK;
 
+date_default_timezone_set("Asia/Taipei");
+
 class MessengerBotWebhook {
+
     private $log_path = __DIR__ . '/log';
     private $webhook_log;
     private $image_path;
@@ -205,7 +208,21 @@ class MessengerBotWebhook {
             ##
             
             //輸入訊息內容
-            if ($v['postback']['payload'] == 'GET_START') {      //start up
+            if (isset($v['policy_enforcement'])) {          //違反facebook政策通知
+                $data['policy_enforcement'] = array(
+                    'action'    => $v['policy_enforcement']['action'],
+                    'reason'    => $v['policy_enforcement']['reason'],
+                );
+                $data['type'] = 'policy_enforcement';
+            } else if (isset($v['optin'])) {            //外掛或一次性訊息的token通知
+                $data['optin'] = array();
+                if (!empty($v['optin']['ref'])) $data['optin']['ref'];
+                if (!empty($v['optin']['user_ref'])) $data['optin']['user_ref'];
+                if (!empty($v['optin']['type'])) $data['optin']['type'];
+                if (!empty($v['optin']['payload'])) $data['optin']['payload'];
+                if (!empty($v['optin']['one_time_notif_token'])) $data['optin']['one_time_notif_token'];
+                $data['type'] = 'optin';
+            } else if ($v['postback']['payload'] == 'GET_START') {      //start up
                 if (isset($v['postback']['referral']['ref'])) {
                     $data['referral'] = $v['postback']['referral']['ref'];
                     $data['type'] = 'referral';
