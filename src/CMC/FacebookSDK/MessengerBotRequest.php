@@ -72,8 +72,15 @@ class MessengerBotRequest {
         foreach ($data['messages'] as $k => $v) {
             $webhook_type = $v['actionType'] ;
             $message_type = (empty($v['tag'])) ? 'RESPONSE' : $v['tag'] ;
-            $psid = $v['userId'] ;
-            $one_time_notif_token = $v['one_time_notif_token'];
+            
+            if (!empty($v['one_time_notif_token'])) {
+                $recipient_type = 'one_time_notif_token';
+                $psid = $v['one_time_notif_token'];
+            } else {
+                $recipient_type = 'id';
+                $psid = $v['userId'] ;
+            }
+            
             $persona_id = '' ;
             
             switch($webhook_type) {
@@ -150,7 +157,6 @@ class MessengerBotRequest {
 
                 case 'profile' :
                         $_token = $v[$webhook_type]['userId'] ;
-                        $persona_id = (empty($v[$webhook_type]['persona_id'])) ? '' : $v[$webhook_type]['persona_id'] ;
                         $res = $this->GetProfile($_token) ;
                         unset($_token) ;
                         
@@ -208,8 +214,8 @@ class MessengerBotRequest {
                         $res = $this->comment_reply($arr) ;
                         $result = (empty($res)) ? json_encode(array('status' => 400, 'result' => array('message' => 'unrecognized data'))) : $res ;
                         
-                        if (is_array($result)) exit(json_encode($result)) ;
-                        else exit($result);
+                        if (is_array($result)) return json_encode($result) ;
+                        else return $result;
                         
                         break ;
                         
@@ -222,7 +228,7 @@ class MessengerBotRequest {
             
             
             if (empty($res)) $this->stop_action(400, '無法確認回應內容') ; 
-            else return $this->push($psid, $one_time_notif_token, $res, $message_type, $persona_id) ;
+            else return $this->push($psid, $res, $message_type, $recipient_type, $persona_id) ;
         }
     }
     ##
@@ -711,7 +717,7 @@ class MessengerBotRequest {
         if (empty($arr)) return false ;
         else {
             $comment_id = $arr['comment_id'] ;
-            // $replies = $arr['message'] ;
+            $persona_id = empty($arr['persona_id']) ? '' : $arr['persona_id'] ;
             $type = $arr['actionType'];
             
             $post_data = array() ;
@@ -738,7 +744,7 @@ class MessengerBotRequest {
             }
             
             if (empty($post_data)) return false ;
-            else return $this->private_push($comment_id, $post_data) ;
+            else return $this->push($comment_id, $post_data, 'RESPONSE', 'comment_id', $persona_id);
         }
     }
     ##
@@ -816,8 +822,6 @@ class MessengerBotRequest {
     
     //Get User Profile
     private function GetProfile($token) {
-        // $url = 'https://graph.facebook.com/'.$this->graph_version.'/me/messenger_profile?fields=id,name,first_name,last_name,profile_pic,locale,timezone,gender&access_token='.$this->page_access_token ;
-        // $url = 'https://graph.facebook.com/'.$token.'?fields=id,name,first_name,last_name,profile_pic,locale,timezone,gender&access_token='.$this->page_access_token ;
         $url = 'https://graph.facebook.com/'.$token.'?fields=first_name,last_name,profile_pic&access_token='.$this->page_access_token ;
         $json = @file_get_contents($url) ;
         $user = array() ;
@@ -887,9 +891,11 @@ class MessengerBotRequest {
     
     /**************** 發送 ******************/
     //PUSH 方式發送
-    public function push($userId, $one_time_notif_token, $post_data, $message_type, $persona_id='') {
-        $message_type = (empty($message_type)) ? 'RESPONSE' : $message_type ;
-        $recipient = empty($one_time_notif_token) ? ['id' => $userId] : ['one_time_notif_token' => $one_time_notif_token];
+    public function push($userId, $post_data, $message_type='RESPONSE', $recipient_type='id', $persona_id='') {
+        if ($recipient_type == 'comment_id') $recipient = ['comment_id' => $userId];
+        else if ($recipient_type == 'one_time_notif_token') $recipient = ['one_time_notif_token' => $userId];
+        else $recipient = ['id' => $userId];
+        
         $data = array(
             'recipient'         => $recipient,
             'messaging_type'    => $message_type,
@@ -904,31 +910,14 @@ class MessengerBotRequest {
     }
     ##
     
-    //private_replies 方式發送
-    private function private_push($userId, $post_data, $message_type='') {
-        $message_type = (empty($message_type)) ? 'RESPONSE' : $message_type ;
-        $data = array(
-            'recipient' => array(
-                'comment_id' => $userId,
-            ),
-            'messaging_type'    => $message_type,
-            'message'           => $post_data,
-        ) ;
-        
-        $res = $this->curl($data) ;
-        
-        return $res ;
-    }
-    ##
-    
     //輸出入顯示動作
     public function mark_seen($psid, $persona_id='') {      //將最後一則訊息標示為已讀
         $data = array(
             'recipient' => array('id' => $psid),
-            'sender_action' => 'mark_seen'
+            'sender_action' => 'mark_seen',
         ) ;
         
-        if (!empty($persona_id)) $data['$persona_id'] = $persona_id ;
+        if (!empty($persona_id)) $data['persona_id'] = $persona_id ;
         
         return $this->curl($data) ;
     }
@@ -936,7 +925,7 @@ class MessengerBotRequest {
     public function typing_on($psid, $persona_id='') {      //開啟輸入指示器
         $data = array(
             'recipient' => array('id' => $psid),
-            'sender_action' => 'typing_on'
+            'sender_action' => 'typing_on',
         ) ;
         
         if (!empty($persona_id)) $data['persona_id'] = $persona_id ;
