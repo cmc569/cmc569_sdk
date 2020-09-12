@@ -1,5 +1,5 @@
 <?php
-//version 1.13
+//version 1.14
 namespace CMC\FacebookSDK;
 
 class MessengerBotRequest {
@@ -73,6 +73,7 @@ class MessengerBotRequest {
             $webhook_type = $v['actionType'] ;
             $message_type = (empty($v['tag'])) ? 'RESPONSE' : $v['tag'] ;
             $psid = $v['userId'] ;
+            $one_time_notif_token = $v['one_time_notif_token'];
             $persona_id = '' ;
             
             switch($webhook_type) {
@@ -221,7 +222,7 @@ class MessengerBotRequest {
             
             
             if (empty($res)) $this->stop_action(400, '無法確認回應內容') ; 
-            else return $this->push($psid, $res, $message_type, $persona_id) ;
+            else return $this->push($psid, $one_time_notif_token, $res, $message_type, $persona_id) ;
         }
     }
     ##
@@ -610,17 +611,19 @@ class MessengerBotRequest {
                     'payload'       => $arr['postback'],
                 ) ;
                 
-                if (!empty($arr['imgUrl'])) $arr['image_url'] = $arr['imgUrl'] ;
+                if (!empty($arr['image_url'])) $acts['image_url'] = $arr['image_url'] ;
             }
             else if ($arr['type'] == 'user_phone_number') {
                 $acts = array(
                     'content_type'  => 'user_phone_number',
                 ) ;
+                if (!empty($arr['image_url'])) $acts['image_url'] = $arr['image_url'] ;
             }
             else if ($arr['type'] == 'user_email') {
                 $acts = array(
                     'content_type'  => 'user_email',
                 ) ;
+                if (!empty($arr['image_url'])) $acts['image_url'] = $arr['image_url'] ;
             }
             
             return $acts ;
@@ -884,12 +887,11 @@ class MessengerBotRequest {
     
     /**************** 發送 ******************/
     //PUSH 方式發送
-    public function push($userId, $post_data, $message_type, $persona_id='') {
+    public function push($userId, $one_time_notif_token, $post_data, $message_type, $persona_id='') {
         $message_type = (empty($message_type)) ? 'RESPONSE' : $message_type ;
+        $recipient = empty($one_time_notif_token) ? ['id' => $userId] : ['one_time_notif_token' => $one_time_notif_token];
         $data = array(
-            'recipient' => array(
-                'id' => $userId,
-            ),
+            'recipient'         => $recipient,
             'messaging_type'    => $message_type,
             'message'           => $post_data,
         ) ;
