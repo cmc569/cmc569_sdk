@@ -1219,7 +1219,7 @@ class LineBotRequest {
         
         file_put_contents($request_log, date("Y-m-d H:i:s")."\n".$process_log."\n", FILE_APPEND) ;
 
-        if (($result == '{}') && !empty($tracking)) {          
+        if (($result == '{}') && !empty($tracking) && is_file(__DIR__.'/track.php')) {          
             $vars = base64_encode(json_encode(array_merge($tracking, ['reply' => json_encode($post_data)]))) ;
             $cmd = 'nohup php -f '.__DIR__.'/track.php '.$vars.' > /dev/null &' ;
             $res = shell_exec($cmd) ;
