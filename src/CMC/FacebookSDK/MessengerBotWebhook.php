@@ -1,5 +1,5 @@
 <?php
-//version 1.03
+//version 1.04
 namespace CMC\FacebookSDK;
 
 class MessengerBotWebhook {
@@ -13,7 +13,6 @@ class MessengerBotWebhook {
     private $push_log;
     private $error_log;
     private $post_log;
-    private $deliver_log;
     private $request_log;
     private $response_log;
 
@@ -62,7 +61,8 @@ class MessengerBotWebhook {
 
         $message = $receive['entry'][0]['messaging'];
         $changes = $receive['entry'][0]['changes'];
-
+        $standby = $receive['entry'][0]['standby'];
+        
         if (!empty($message)) {         //messenger
             return $this->messenger($message, $page_id);
         } else if (!empty($changes)) {    //粉資專頁貼文
@@ -120,11 +120,6 @@ class MessengerBotWebhook {
             mkdir($this->post_log, 0777);
         $this->post_log .= '/post_' . date("Ymd") . '.log';
 
-        $this->deliver_log = $dir_log . '/deliver';
-        if (!is_dir($this->deliver_log))
-            mkdir($this->deliver_log, 0777);
-        $this->deliver_log .= '/deliver_' . date("Ymd") . '.log';
-
         $this->request_log = $dir_log . '/request';
         if (!is_dir($this->request_log))
             mkdir($this->request_log, 0777);
@@ -164,48 +159,29 @@ class MessengerBotWebhook {
             $data['page'] = $recipient;
             ##
             
-            // 已發送訊息
-            if (isset($v['delivery'])) {
-                file_put_contents($this->deliver_log, date("Y-m-d H:i:s") . ' to:' . $psid . ' timestamp:' . $v['timestamp'] . ' watermark:' . $v['delivery']['watermark'] . ' mids:' . implode(',', $v['delivery']['mids']) . "\n", FILE_APPEND);
-                continue;
-            }
-            ##
-            
-            // 訊息已被讀取
-            if (isset($v['read'])) {
-                $unRead_log = $this->log_path . '/' . $page_id . '/unRead';
-                if (!is_dir($unRead_log))
-                    mkdir($unRead_log, 0777);
-                $unRead_log .= '/unRead_' . $psid . '.log';
-
-                $_read = explode("\n", file_get_contents($unRead_log));
-                foreach ($_read as $_k => $_v) {
-                    if ($_v <= $v['read']['watermark'])
-                        unset($_read[$_k]);
-                }
-
-                file_put_contents($unRead_log, implode("\n", $_read));
-                unset($_read);
-
-                continue;
-            }
-            ##
-            
             // 透過機器人發送的訊息
-            if (isset($v['message']['is_echo'])) {
-                $unRead_log = $this->log_path . '/' . $page_id . '/unRead';
-                if (!is_dir($unRead_log))
-                    mkdir($unRead_log, 0777);
-                $unRead_log .= '/unRead_' . $recipient . '.log';
-
-                file_put_contents($unRead_log, $v['timestamp'] . "\n", FILE_APPEND);
-
+            if (isset($v['delivery'])) {        //訊息已送達
+                $data['delivery'] = array(
+                    'mids'      => $v['delivery']['mids'],
+                    'watermark' => $v['delivery']['watermark'],
+                );
+                $data['type'] = 'delivery';
                 continue;
-            }
-            ##
-            
-            //輸入訊息內容
-            if (isset($v['policy_enforcement'])) {          //違反facebook政策通知
+            } else if (isset($v['read'])) {     //訊息已被讀取
+                $data['read'] = array(
+                    'watermark' => $v['read']['watermark'],
+                );
+                $data['type'] = 'read';
+                continue;
+            } else if (isset($v['message']['is_echo'])) {      //訊息已發出 
+                $data['is_echo'] = array(
+                    'app_id'    => $v['message']['is_echo']['app_id'],
+                    'metadata'  => $v['message']['is_echo']['metadata'] ?? '',
+                    'mid'       => $v['message']['is_echo']['mid'],
+                );
+                $data['type'] = 'is_echo';
+                continue;
+            } else if (isset($v['policy_enforcement'])) {          //違反facebook政策通知
                 $data['policy_enforcement'] = array(
                     'action'    => $v['policy_enforcement']['action'],
                     'reason'    => $v['policy_enforcement']['reason'],
@@ -227,6 +203,24 @@ class MessengerBotWebhook {
                 if (!empty($v['optin']['payload'])) $data['optin']['payload'] = $v['optin']['payload'];
                 if (!empty($v['optin']['one_time_notif_token'])) $data['optin']['one_time_notif_token'] = $v['optin']['one_time_notif_token'];
                 $data['type'] = 'optin';
+            } else if (isset($v['pass_thread_control'])) {            //pass_thread_control
+                $data['pass_thread_control'] = array(
+                    'new_owner_app_id'  => $v['pass_thread_control']['new_owner_app_id'] ?? '',
+                    'metadata'          => $v['pass_thread_control']['metadata'] ?? '',
+                );
+                $data['type'] = 'pass_thread_control';
+            } else if (isset($v['take_thread_control'])) {            //take_thread_control
+                $data['take_thread_control'] = array(
+                    'previous_owner_app_id' => $v['take_thread_control']['previous_owner_app_id'] ?? '',
+                    'metadata'              => $v['take_thread_control']['metadata'] ?? '',
+                );
+                $data['type'] = 'take_thread_control';
+            } else if (isset($v['request_thread_control'])) {            //request_thread_control
+                $data['request_thread_control'] = array(
+                    'request_thread_control'    => $v['request_thread_control']['request_thread_control'] ?? '',
+                    'metadata'                  => $v['request_thread_control']['metadata'] ?? '',
+                );
+                $data['type'] = 'request_thread_control';
             } else if ($v['postback']['payload'] == 'GET_START') {      //start up
                 if (isset($v['postback']['referral']['ref'])) {
                     $data['referral'] = $v['postback']['referral']['ref'];
