@@ -64,9 +64,11 @@ class MessengerBotWebhook {
         $standby = $receive['entry'][0]['standby'];
         
         if (!empty($message)) {         //messenger
-            return $this->messenger($message, $page_id);
+            return $this->messenger($message, $page_id, 'messenger');
         } else if (!empty($changes)) {    //粉資專頁貼文
             return $this->page($changes, $page_id);
+        } else if (!empty($standby)) {    //standby
+            return $this->messenger($standby, $page_id, 'standby');
         }
     }
 
@@ -137,7 +139,7 @@ class MessengerBotWebhook {
     ##
 
     //messenger 呼叫
-    private function messenger($message, $page_id) {
+    private function messenger($message, $page_id, $events='messenger') {
         if (empty($message))
             return false;
 
@@ -145,7 +147,7 @@ class MessengerBotWebhook {
         $request = array();
         foreach ($message as $k => $v) {
             $data = array();
-            $data['messenger'] = json_encode($v);
+            $data[$events] = json_encode($v);
             $data['page_id'] = $page_id;
 
             //發送方(取得 psid)
