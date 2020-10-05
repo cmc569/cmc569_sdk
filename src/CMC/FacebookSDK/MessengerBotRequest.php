@@ -1,5 +1,5 @@
 <?php
-//version 1.14
+//version 1.15
 namespace CMC\FacebookSDK;
 
 class MessengerBotRequest {
@@ -902,6 +902,11 @@ class MessengerBotRequest {
             'message'           => $post_data,
         ) ;
         
+        if (!empty($message_type) && $message_type != 'RESPONSE') {
+            $data['messaging_type'] = 'MESSAGE_TAG';
+            $data['tag'] = $message_type;
+        }
+        
         if (!empty($persona_id)) $data['persona_id'] = $persona_id ;
         
         $res = $this->curl($data) ;
@@ -977,11 +982,12 @@ class MessengerBotRequest {
         
         $process_log = 'End-Point:'."\n".$url."\n" ;
         $process_log .= 'Request:'."\n".json_encode($post_data, JSON_UNESCAPED_UNICODE)."\n" ;
-        $process_log .= 'Response:'."\n".json_encode($result, JSON_UNESCAPED_UNICODE)."\n" ;
+        $process_log .= 'Response(Header):'."\n".$result."\n" ;
+        $process_log .= 'Response(Body):'."\n".json_encode($returnCode, JSON_UNESCAPED_UNICODE)."\n" ;
         
         file_put_contents($reply_log, date("Y-m-d H:i:s")."\n".$process_log."\n", FILE_APPEND) ;
 
-        return $returnCode ;
+        return $result ;
     }
     ##
     

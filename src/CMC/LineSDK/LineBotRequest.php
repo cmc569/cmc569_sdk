@@ -1204,7 +1204,6 @@ class LineBotRequest {
         curl_setopt($ch, CURLOPT_HEADER, true) ;
         
         $response = curl_exec($ch);
-        $returnCode = curl_getinfo($ch);
         
         $response_header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         $response_header = substr($response, 0, $response_header_size);
@@ -1225,7 +1224,6 @@ class LineBotRequest {
             $res = shell_exec($cmd) ;
         }
 
-        // return $returnCode ;
         return $result ;
     }
     ##
