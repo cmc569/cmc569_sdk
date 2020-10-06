@@ -572,6 +572,13 @@ class MessengerBotRequest {
                     'payload'   => $arr['postback'],
                 ) ;
             }
+            else if ($arr['type'] == 'phone_number') {
+                $acts = array(
+                    'type'      => 'phone_number',
+                    'title'     => $arr['title'],
+                    'payload'   => $arr['postback'],
+                ) ;
+            }
             else if ($arr['type'] == 'url') {
                 $acts = array(
                     'type'                  => 'web_url',
