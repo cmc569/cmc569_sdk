@@ -1,18 +1,19 @@
 <?php
 namespace CMC\Encryption;
 
-Class Aes {
+//AES 編碼(AES-256-CBC)
+Class AES {
 	private $cipherMethod ;
 	private $key ;
 	private $iv ;
 	
-	public function __construct($key) {
+	public function __construct($key='accuhitwithwonderaccubot') {
 		$this->cipherMethod = 'AES-256-CBC' ;
 		$this->key = $key ;
 	}
 	
 	public function encode($rawString) {
-		$this->iv = $this->getIV(openssl_cipher_iv_length($this->cipherMethod)) ;
+		$this->iv = empty($iv) ? $this->getIV(openssl_cipher_iv_length($this->cipherMethod)) : $iv ;
 		$encryptedString = openssl_encrypt($rawString, $this->cipherMethod, $this->key, 0, $this->iv) ;
 		
 		return $this->iv.$encryptedString ;
@@ -21,13 +22,13 @@ Class Aes {
 	public function decode($encryptedString) {
         $iv = substr($encryptedString, 0, 16) ;
         $encryptedString = substr($encryptedString, 16) ;
-		$decryptedString = openssl_decrypt($encryptedString, $this->cipherMethod, $this->key, 0, $this->iv) ;
+		$decryptedString = openssl_decrypt($encryptedString, $this->cipherMethod, $this->key, 0, $iv) ;
 		
 		return $decryptedString ;
 	}
 	
 	public function bencode($rawString) {
-		$this->iv = $this->getIV(openssl_cipher_iv_length($this->cipherMethod));
+		$this->iv = empty($iv) ? $this->getIV(openssl_cipher_iv_length($this->cipherMethod)) : $iv ;
 		$encryptedString = openssl_encrypt($rawString, $this->cipherMethod, $this->key, 0, $this->iv) ;
 		
 		return base64_encode($this->iv.$encryptedString) ;
@@ -37,7 +38,7 @@ Class Aes {
         $encryptedString = base64_decode($encryptedString) ;
         $iv = substr($encryptedString, 0, 16) ;
         $encryptedString = substr($encryptedString, 16) ;
-		$decryptedString = openssl_decrypt($encryptedString, $this->cipherMethod, $this->key, 0, $this->iv) ;
+		$decryptedString = openssl_decrypt($encryptedString, $this->cipherMethod, $this->key, 0, $iv) ;
 		
 		return $decryptedString ;
 	}
