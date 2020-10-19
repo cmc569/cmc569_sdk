@@ -2,7 +2,8 @@
 //version 1.15
 namespace CMC\FacebookSDK;
 
-class MessengerBotRequest {
+class MessengerBotRequest
+{
     private $app_id ;
     private $app_secret ;
     private $page_access_token ;
@@ -989,8 +990,8 @@ class MessengerBotRequest {
         
         $process_log = 'End-Point:'."\n".$url."\n" ;
         $process_log .= 'Request:'."\n".json_encode($post_data, JSON_UNESCAPED_UNICODE)."\n" ;
-        $process_log .= 'Response(Header):'."\n".$result."\n" ;
-        $process_log .= 'Response(Body):'."\n".json_encode($returnCode, JSON_UNESCAPED_UNICODE)."\n" ;
+        $process_log .= 'Response(Header):'."\n".json_encode($returnCode, JSON_UNESCAPED_UNICODE)."\n" ;
+        $process_log .= 'Response(Body):'."\n".$result."\n" ;
         
         file_put_contents($reply_log, date("Y-m-d H:i:s")."\n".$process_log."\n", FILE_APPEND) ;
 
