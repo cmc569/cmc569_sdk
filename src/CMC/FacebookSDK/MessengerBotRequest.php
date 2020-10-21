@@ -1043,7 +1043,7 @@ class MessengerBotRequest
         
         file_put_contents($reply_log, date("Y-m-d H:i:s")."\n".$process_log."\n", FILE_APPEND) ;
         
-        return $return ;
+        return $result ;
     }
     ##
 }
