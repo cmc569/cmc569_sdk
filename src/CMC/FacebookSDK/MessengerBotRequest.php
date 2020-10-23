@@ -1,5 +1,5 @@
 <?php
-//version 1.15
+//version 1.16
 namespace CMC\FacebookSDK;
 
 class MessengerBotRequest
@@ -7,6 +7,7 @@ class MessengerBotRequest
     private $app_id ;
     private $app_secret ;
     private $page_access_token ;
+    private $headers ;
     private $graph_version = 'v8.0' ;
     private $log_path = __DIR__.'/log' ;
     
@@ -960,6 +961,8 @@ class MessengerBotRequest
     
     //curl 發送
     private function curl($post_data=array()) {
+        $this->headers = [];
+        
         //請求 log
         $reply_log = $this->log_path.'/reply' ;
         if (!is_dir($reply_log)) $tf = mkdir($reply_log, 0777, true) ;
@@ -972,7 +975,6 @@ class MessengerBotRequest
             'Content-Type: application/json; charset=utf-8'
         ) ;
         
-        // $url = 'https://graph.facebook.com/v3.3/me/messages?access_token='.$this->page_access_token ;
         $url = 'https://graph.facebook.com/'.$this->graph_version.'/me/messages?access_token='.$this->page_access_token ;    //不支援list template
         
         $ch = curl_init($url) ;
@@ -983,6 +985,7 @@ class MessengerBotRequest
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post_data)) ;
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header) ;
+        curl_setopt($ch, CURLOPT_HEADERFUNCTION, [$this, 'readHeader']);
         
         $result = curl_exec($ch) ;
         $returnCode = curl_getinfo($ch) ;
@@ -990,7 +993,8 @@ class MessengerBotRequest
         
         $process_log = 'End-Point:'."\n".$url."\n" ;
         $process_log .= 'Request:'."\n".json_encode($post_data, JSON_UNESCAPED_UNICODE)."\n" ;
-        $process_log .= 'Response(Header):'."\n".json_encode($returnCode, JSON_UNESCAPED_UNICODE)."\n" ;
+        $process_log .= 'Response(Status):'."\n".json_encode($returnCode, JSON_UNESCAPED_UNICODE)."\n" ;
+        $process_log .= 'Response(Header):'."\n".json_encode($this->headers, JSON_UNESCAPED_UNICODE)."\n" ;
         $process_log .= 'Response(Body):'."\n".$result."\n" ;
         
         file_put_contents($reply_log, date("Y-m-d H:i:s")."\n".$process_log."\n", FILE_APPEND) ;
@@ -1001,6 +1005,8 @@ class MessengerBotRequest
     
     //menu curl
     private function menu_curl($psid, $data, $type='POST') {
+        $this->headers = [];
+        
         //請求 log
         $reply_log = $this->log_path.'/reply' ;
         if (!is_dir($reply_log)) $tf = mkdir($reply_log, 0777, true) ;
@@ -1034,17 +1040,30 @@ class MessengerBotRequest
         }
 
         curl_setopt($process, CURLOPT_RETURNTRANSFER, true) ;
+        curl_setopt($process, CURLOPT_HEADERFUNCTION, [$this, 'readHeader']);
+        
         $result = curl_exec($process) ;
+        $returnCode = curl_getinfo($process) ;
         curl_close($process) ;
         
         $process_log = 'End-Point:'."\n".$url."\n" ;
         $process_log .= 'Request:'."\n".json_encode($data, JSON_UNESCAPED_UNICODE)."\n" ;
-        $process_log .= 'Response:'."\n".json_encode($result, JSON_UNESCAPED_UNICODE)."\n" ;
+        $process_log .= 'Response(Status):'."\n".json_encode($returnCode, JSON_UNESCAPED_UNICODE)."\n" ;
+        $process_log .= 'Response(Header):'."\n".json_encode($this->headers, JSON_UNESCAPED_UNICODE)."\n" ;
+        $process_log .= 'Response(Body):'."\n".json_encode($result, JSON_UNESCAPED_UNICODE)."\n" ;
         
         file_put_contents($reply_log, date("Y-m-d H:i:s")."\n".$process_log."\n", FILE_APPEND) ;
         
         return $result ;
     }
     ##
+    
+    //取得header資訊
+    private function readHeader($ch, $header){
+        $this->headers[] = $header;
+        return strlen($header);
+    }
+    ##
 }
+
 ?>

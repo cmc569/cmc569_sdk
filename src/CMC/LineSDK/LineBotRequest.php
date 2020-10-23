@@ -1,11 +1,12 @@
 <?php
-// version: 1.18
+// version: 1.19
 namespace CMC\LineSDK;
 
 class LineBotRequest {
     private $channel_id ;
     private $channel_secret ;
     private $channel_access_token ;
+    private $headers ;
     private $log_path = __DIR__.'/log' ;
     private $userId ;
     private $reply_token ;
@@ -1166,6 +1167,8 @@ class LineBotRequest {
 
     //curl 發送
     private function curl($target, $way='push', $post_data=array(), $mehod='POST', $tracking=array()) {
+        $this->headers = [];
+        
         //請求 log
         $request_log = $this->log_path.'/request' ;
         if (!is_dir($request_log)) $tf = mkdir($request_log, 0777, true) ;
@@ -1202,6 +1205,7 @@ class LineBotRequest {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header) ;
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_HEADER, true) ;
+        curl_setopt($ch, CURLOPT_HEADERFUNCTION, [$this, 'readHeader']);
         
         $response = curl_exec($ch);
         
@@ -1213,7 +1217,8 @@ class LineBotRequest {
         
         $process_log = 'End-Point:'."\n".$url."\n" ;
         $process_log .= 'Request:'."\n".json_encode($post_data, JSON_UNESCAPED_UNICODE)."\n" ;
-        $process_log .= 'Response(Header):'."\n".$response_header ;
+        $process_log .= 'Response(Status):'."\n".$response_header ;
+        $process_log .= 'Response(Header):'."\n".json_encode($this->headers, JSON_UNESCAPED_UNICODE)."\n" ;
         $process_log .= 'Response(Body):'."\n".json_encode($result, JSON_UNESCAPED_UNICODE)."\n" ;
         
         file_put_contents($request_log, date("Y-m-d H:i:s")."\n".$process_log."\n", FILE_APPEND) ;
@@ -1228,5 +1233,11 @@ class LineBotRequest {
     }
     ##
     
+    //取得header資訊
+    private function readHeader($ch, $header){
+        $this->headers[] = $header;
+        return strlen($header);
+    }
+    ##
 }
 ?>
