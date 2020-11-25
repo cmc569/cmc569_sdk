@@ -1,5 +1,5 @@
 <?php
-// version: 1.19
+// version: 1.20
 namespace CMC\LineSDK;
 
 class LineBotRequest {
@@ -1188,7 +1188,16 @@ class LineBotRequest {
         $post_data['messages'] = $post_data ;
         
         if ($way == 'reply') $post_data['replyToken'] = $target ;
-        else if ($way == 'push') $post_data['to'] = $target ;
+        else if ($way == 'push') {
+            $post_data['to'] = $target ;
+            
+            if (is_array($target)) {
+                $way = 'multicast';
+            } else if (strtolower($target) == 'broadcast') {
+                $way = 'broadcast';
+                unset($post_data['to']);
+            }
+        }
         else $this->stop_action(400, '無法確認發送模式') ;
         
         $url = 'https://api.line.me/v2/bot/message/'.$way ;
