@@ -1,5 +1,5 @@
 <?php
-//version 1.16
+//version 1.17
 namespace CMC\FacebookSDK;
 
 class MessengerBotRequest
@@ -8,7 +8,7 @@ class MessengerBotRequest
     private $app_secret ;
     private $page_access_token ;
     private $headers ;
-    private $graph_version = 'v8.0' ;
+    private $graph_version = 'v9.0' ;
     private $log_path = __DIR__.'/log' ;
     
     /************** 初始設定 ********************/
@@ -582,11 +582,13 @@ class MessengerBotRequest
                 ) ;
             }
             else if ($arr['type'] == 'url') {
+                $messenger_extensions = empty($arr['messenger_extensions']) ? false : true;
                 $acts = array(
                     'type'                  => 'web_url',
                     'title'                 => $arr['title'],
                     'url'                   => $arr['url'],
                     'webview_height_ratio'  => $arr['webview_height_ratio'],
+                    'messenger_extensions'  => $messenger_extensions,
                 ) ;
             }
             
@@ -601,10 +603,12 @@ class MessengerBotRequest
         else {  
             if (empty($arr)) $default_acts = array() ;
             else {
+                $messenger_extensions = empty($arr['messenger_extensions']) ? false : true;
                 $default_acts = array(
                     'type'                  => 'web_url',
                     'url'                   => $arr['url'],
                     'webview_height_ratio'  => $arr['webview_height_ratio'],
+                    'messenger_extensions'  => $messenger_extensions,
                 ) ;
             }
             
@@ -1014,13 +1018,20 @@ class MessengerBotRequest
         ##
         
         $type = strtoupper($type) ;
+        $data['access_token'] = $this->page_access_token ;
         
         if (empty($psid)) {
             $url = 'https://graph.facebook.com/'.$this->graph_version.'/me/messenger_profile' ;
-            $data['access_token'] = $this->page_access_token ;
+            
+            if ($type == 'DELETE') {
+                $url .= '?fields=[%22persistent_menu%22]&access_token='.$this->page_access_token ;
+            }
         } else {
-            if ($type == 'POST') $url = 'https://graph.facebook.com/'.$this->graph_version.'/me/custom_user_settings?access_token='.$this->page_access_token ;
-            else $url = 'https://graph.facebook.com/'.$this->graph_version.'/me/custom_user_settings?psid='.$psid.'&params=[%22persistent_menu%22]&access_token='.$this->page_access_token ;
+            $url = 'https://graph.facebook.com/'.$this->graph_version.'/me/custom_user_settings' ;
+        
+            if ($type == 'DELETE') {
+                $url .= '?psid='.$psid.'&params=[%22persistent_menu%22]&access_token='.$this->page_access_token ;
+            }
         }
         
         $headers = [
@@ -1032,11 +1043,9 @@ class MessengerBotRequest
         curl_setopt($process, CURLOPT_HEADER, false) ;
         curl_setopt($process, CURLOPT_TIMEOUT, 30) ;
         curl_setopt($process, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($process, CURLOPT_POST, 1) ;
-        curl_setopt($process, CURLOPT_POSTFIELDS, http_build_query($data)) ;
-
-        if ($type == 'DELETE') {
-            curl_setopt($process, CURLOPT_CUSTOMREQUEST, "DELETE") ;
+        curl_setopt($process, CURLOPT_CUSTOMREQUEST, $type);
+        if ($type == 'POST') {
+            curl_setopt($process, CURLOPT_POSTFIELDS, http_build_query($data)) ;
         }
 
         curl_setopt($process, CURLOPT_RETURNTRANSFER, true) ;
