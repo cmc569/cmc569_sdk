@@ -1,5 +1,5 @@
 <?php
-//version 1.04
+//version 1.05
 namespace CMC\FacebookSDK;
 
 class MessengerBotWebhook {
@@ -51,6 +51,10 @@ class MessengerBotWebhook {
 
     //主程式內容
     private function events($receive) {
+        //取得來源種類 page: facebook、instgram: IG
+        $object = $receive['object'];
+        ##
+        
         //取得 page id
         $page_id = $receive['entry'][0]['id'];
         ##
@@ -66,7 +70,15 @@ class MessengerBotWebhook {
         if (!empty($message)) {         //messenger
             return $this->messenger($message, $page_id, 'messenger');
         } else if (!empty($changes)) {    //粉資專頁貼文
-            return $this->page($changes, $page_id);
+            if ($object == 'page') {
+                return $this->page($changes, $page_id);
+            }
+            else if ($object == 'instagram') {
+                return $this->instagram($changes, $page_id);
+            }
+            else {
+                return false;
+            }
         } else if (!empty($standby)) {    //standby
             return $this->messenger($standby, $page_id, 'standby');
         }
@@ -147,6 +159,8 @@ class MessengerBotWebhook {
         $request = array();
         foreach ($message as $k => $v) {
             $data = array();
+            
+            $data['object'] = 'page';
             $data[$events] = json_encode($v);
             $data['page_id'] = $page_id;
 
@@ -338,10 +352,13 @@ class MessengerBotWebhook {
         if (empty($changes))
             return false;
 
+
         //粉資專頁貼文
         $request = array();
         foreach ($changes as $k => $v) {
             $data = array();
+            
+            $data['object'] = 'page';
             $data['changes'] = json_encode($v);
             $data['page_id'] = $page_id;
 
@@ -376,9 +393,34 @@ class MessengerBotWebhook {
 
         return $request;
     }
+    ## 
 
+    //粉絲專頁呼叫
+    private function instagram($changes, $page_id) {
+        if (empty($changes))
+            return false;
+
+        //instagram 貼文回應／提及
+        $request = array();
+        foreach ($changes as $k => $v) {
+            $data = array();
+            
+            $data['object'] = 'instagram';
+            $data['changes'] = json_encode($v);
+            $data[$v['field']] = $v['value'];
+            $data['page_id'] = $page_id;
+
+            //紀錄 request / response data
+            file_put_contents($this->request_log, date("Y-m-d H:i:s") . ' ' . json_encode($data) . "\n\n", FILE_APPEND);
+            ##
+
+            $request[] = $data;
+        }
+
+        return $request;
+    }
     ## 
 }
-
 ##
+
 ?>
