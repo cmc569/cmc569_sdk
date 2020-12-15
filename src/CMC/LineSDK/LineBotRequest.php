@@ -1,5 +1,5 @@
 <?php
-// version: 1.20
+// version: 1.21
 namespace CMC\LineSDK;
 
 class LineBotRequest {
@@ -237,7 +237,9 @@ class LineBotRequest {
         
         if (empty($res)) $this->stop_action(400, '無法確認回應內容') ; 
         // else return (empty($data['reply_token'])) ? $this->push($data['userId'], $res, $tracking) : $this->reply($data['reply_token'], $res, $tracking) ;
-        else $this->push_reply($res, $tracking) ;
+        else {
+            return $this->push_reply($res, $tracking) ;
+        }
     }
     ##
     
