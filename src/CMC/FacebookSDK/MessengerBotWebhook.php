@@ -237,7 +237,7 @@ class MessengerBotWebhook {
                     'metadata'                  => $v['request_thread_control']['metadata'] ?? '',
                 );
                 $data['type'] = 'request_thread_control';
-            } else if ($v['postback']['payload'] == 'GET_START') {      //start up
+            } else if (($v['postback']['payload'] == 'GET_START') || ($v['postback']['title'] == 'Get Started')) {      //start up
                 if (isset($v['postback']['referral']['ref'])) {
                     $data['referral'] = $v['postback']['referral']['ref'];
                     $data['type'] = 'referral';
