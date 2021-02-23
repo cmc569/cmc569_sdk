@@ -549,11 +549,13 @@ class MessengerBotRequest
             
             $template = array(
                 'title'             => $arr['title'],
-                'image_url'         => $arr['image_url'],
-                'subtitle'          => $arr['subtitle'],
+                // 'image_url'         => $arr['image_url'],
+                // 'subtitle'          => $arr['subtitle'],
                 'buttons'           => $acts,
             ) ;
             
+            if (!empty($arr['image_url'])) $template['image_url'] = $arr['image_url'];
+            if (!empty($arr['subtitle'])) $template['subtitle'] = $arr['subtitle'];
             if (!empty($default_acts)) $template['default_action'] = $default_acts ;
             
             return $template ;
