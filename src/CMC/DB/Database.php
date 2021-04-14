@@ -1,5 +1,7 @@
 <?php
 //version 1.01
+ini_set('date.timezone','Asia/Taipei') ;
+
 namespace CMC\DB;
 
 use PDO;
