@@ -1,5 +1,5 @@
 <?php
-//version 1.0
+//version 1.01
 namespace CMC\DB;
 
 use PDO;
@@ -17,7 +17,9 @@ class Database
     private $dbh;
     private $error;
     private $stmt;
- 
+    
+    private $debug_sql;
+    
     public function __construct($config, $str='set names utf8')
     {
         //初始設定
@@ -54,7 +56,21 @@ class Database
         }
         catch(PDOException $e)
 		{
-            $this->error = $e->getMessage();
+            // set error log
+            $log = dirname(__DIR__).'/log/db';
+            
+            if (!is_dir($log)) {
+                mkdir($log, 0777, true);
+            }
+            ##
+        
+            file_put_contents(
+                $log.'/error_'.date("Ymd").'.log',
+                date("Y-m-d H:i:s").
+                "\n".print_r($e->getMessage(), true).
+                "\ndsn：".print_r($dsn, true)."\n\n",
+                FILE_APPEND
+            );
         }
         ##
     }
@@ -120,6 +136,7 @@ class Database
     //prepare + execute
     public function getPrepare($query, $data=[])
     {
+        $this->debug_params($query, $data);
         $this->query($query);
         return $this->go($data);
     }
@@ -187,6 +204,25 @@ class Database
     public function debugDump()
     {
         return $this->stmt->debugDumpParams();
+    }
+    ##
+    
+    //列印可執行 sql
+    private function debug_params($query, Array $data=NULL) {
+        $temp_sql = $query;
+        
+        if (!empty($data)) {
+            foreach($data as $k => $v) {
+                $temp_sql = preg_replace('/:'.$k.'/', "'".$v."'", $temp_sql);
+            }
+        }
+        
+        $this->debug_sql = $temp_sql;
+    }
+
+    public function debug() {
+        $this->debug_sql = str_replace(array("\r", "\n", "\r\n", "\n\r"), '', $this->debug_sql);
+        return $this->debug_sql;
     }
     ##
 }
